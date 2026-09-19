@@ -1,0 +1,9 @@
+import {sqliteTable,text,integer,primaryKey,index} from 'drizzle-orm/sqlite-core';
+export const users=sqliteTable('users',{id:text('id').primaryKey(),email:text('email').notNull().unique(),password:text('password').notNull(),name:text('name').notNull(),created:integer('created').notNull()});
+export const profiles=sqliteTable('profiles',{id:text('id').primaryKey(),name:text('name').notNull(),bio:text('bio').notNull().default(''),region:text('region').notNull().default('')});
+export const spots=sqliteTable('spots',{id:text('id').primaryKey(),owner:text('owner').notNull(),data:text('data').notNull(),created:integer('created').notNull()},t=>[index('idx_spots_owner').on(t.owner)]);
+export const actions=sqliteTable('actions',{user:text('user').notNull(),spot:text('spot').notNull(),kind:text('kind').notNull(),created:integer('created').notNull()},t=>[primaryKey({columns:[t.user,t.spot,t.kind]}),index('idx_actions_spot').on(t.spot,t.kind)]);
+export const comments=sqliteTable('comments',{id:text('id').primaryKey(),user:text('user').notNull(),spot:text('spot').notNull(),kind:text('kind').notNull(),text:text('text').notNull(),rating:integer('rating'),created:integer('created').notNull()},t=>[index('idx_comments_spot').on(t.spot)]);
+export const trips=sqliteTable('trips',{id:text('id').primaryKey(),user:text('user').notNull(),name:text('name').notNull(),date:text('date').notNull(),spots:text('spots').notNull(),created:integer('created').notNull()},t=>[index('idx_trips_user').on(t.user)]);
+export const reports=sqliteTable('reports',{id:text('id').primaryKey(),user:text('user').notNull(),spot:text('spot').notNull(),reason:text('reason').notNull(),created:integer('created').notNull()});
+export const uploads=sqliteTable('uploads',{id:text('id').primaryKey(),user:text('user').notNull(),type:text('type').notNull()});
