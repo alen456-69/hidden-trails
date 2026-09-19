@@ -89,6 +89,67 @@ a `BLOB_READ_WRITE_TOKEN` in `.env.local` — get one from your Vercel
 project's Blob store settings (`vercel env pull` also works if you use the
 Vercel CLI).
 
+## Google sign-in
+
+People can sign in with either email/password or a "Continue with Google"
+button — both create the same kind of session, so nothing else about the
+app changes based on which one they use.
+
+To turn it on, add two environment variables — in Vercel (**Settings →
+Environment Variables**) and in your local `.env.local`:
+
+| Name | Value |
+|---|---|
+| `GOOGLE_CLIENT_ID` | from Google Cloud Console |
+| `GOOGLE_CLIENT_SECRET` | from Google Cloud Console |
+
+These come from a project you create at
+[console.cloud.google.com](https://console.cloud.google.com):
+
+1. Create a project, then go to **APIs & Services → OAuth consent screen**
+   and fill in the basics (app name, your email).
+2. Go to **APIs & Services → Credentials → Create Credentials → OAuth
+   client ID**, choose **Web application**.
+3. Under **Authorized redirect URIs**, add:
+   ```
+   https://your-app.vercel.app/api/auth/google/callback
+   ```
+   using your real Vercel URL (or custom domain). If you also want Google
+   sign-in to work while running `npm run dev` locally, add a second one:
+   ```
+   http://localhost:3000/api/auth/google/callback
+   ```
+4. Copy the **Client ID** and **Client Secret** it gives you into the two
+   environment variables above.
+
+If someone originally signed up with email/password and later uses
+"Continue with Google" with the same email, their existing account is
+linked automatically rather than creating a duplicate.
+
+If these two environment variables aren't set, the Google button will show
+an error — everything else in the app keeps working normally either way.
+
+## Admin panel
+
+Visit `/admin` on your deployed site (e.g. `https://your-app.vercel.app/admin`)
+while signed in with an account whose email is listed in `ADMIN_EMAILS`. From
+there you can:
+
+- See every listing anyone has posted, verify or unverify it, or delete it
+- See every user account, and ban/unban them (a banned user can't sign in or
+  post while banned)
+
+To set it up:
+
+1. Add an `ADMIN_EMAILS` environment variable in Vercel (**Settings →
+   Environment Variables**) with your email address — for more than one
+   admin, separate them with commas: `you@example.com,friend@example.com`
+2. Sign up for a regular account in the app using that same email
+3. Go to `/admin` on your site
+
+Nobody else can see or use this page — it checks your email against
+`ADMIN_EMAILS` on the server every time, not just in the browser.
+
 ## What changed from the original
 
 - `app/chatgpt-auth.ts` → `lib/auth.ts` + `/api/auth/signup|signin|signout`
@@ -103,6 +164,11 @@ Vercel CLI).
   `next build` / `next start` project
 - Photo/video URL validation in `lib/models.ts` now accepts any URL rather
   than only the old `/api/media/...` shape
+- Added an admin panel at `/admin` (see above) — new `verified` column on
+  `spots` and `banned` column on `users`, protected by the `ADMIN_EMAILS`
+  environment variable
+- Added "Continue with Google" sign-in alongside email/password — new
+  `google_id` column on `users`, via `GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET`
 
 Nothing about the trail-discovery features, the UI, or the data model
 (spots, saves, trips, comments, badges, etc.) changed.

@@ -86,9 +86,33 @@ const statements = [
     type TEXT NOT NULL
   )`,
 ];
-
 for (const sql of statements) {
   await client.execute(sql);
   console.log("OK:", sql.trim().split("\n")[0]);
 }
+
+// Columns added after the initial release — ALTER TABLE, ignoring
+// "duplicate column" errors so this stays safe to run again.
+const alters = [
+  `ALTER TABLE spots ADD COLUMN verified INTEGER NOT NULL DEFAULT 0`,
+  `ALTER TABLE users ADD COLUMN banned INTEGER NOT NULL DEFAULT 0`,
+  `ALTER TABLE users ADD COLUMN google_id TEXT`,
+];
+for (const sql of alters) {
+  try {
+    await client.execute(sql);
+    console.log("OK:", sql.trim());
+  } catch (e) {
+    if (String(e.message || e).includes("duplicate column")) {
+      console.log("Already present:", sql.trim());
+    } else {
+      throw e;
+    }
+  }
+}
+
+// Unique index for Google account linking (safe to run every time).
+await client.execute(`CREATE UNIQUE INDEX IF NOT EXISTS idx_users_google_id ON users (google_id)`);
+console.log("OK: CREATE UNIQUE INDEX IF NOT EXISTS idx_users_google_id");
+
 console.log("\nDatabase is ready.");

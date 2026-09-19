@@ -6,10 +6,19 @@ export type SessionUser = {
   displayName: string;
   email: string;
   fullName: string | null;
+  isAdmin: boolean;
 };
 
 const COOKIE = 'ht_session';
 const MAX_AGE = 60 * 60 * 24 * 30; // 30 days
+
+function isAdminEmail(email: string){
+  const list = (process.env.ADMIN_EMAILS || '')
+    .split(',')
+    .map(e => e.trim().toLowerCase())
+    .filter(Boolean);
+  return list.includes(email.toLowerCase());
+}
 
 function secret(){
   const s = process.env.AUTH_SECRET;
@@ -49,7 +58,7 @@ export async function getSessionUser(): Promise<SessionUser | null> {
     const email = payload.email as string;
     const name = (payload.name as string) || email;
     if(!userId || !email) return null;
-    return { userId, displayName: name, email, fullName: name };
+    return { userId, displayName: name, email, fullName: name, isAdmin: isAdminEmail(email) };
   } catch {
     return null;
   }

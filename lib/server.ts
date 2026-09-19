@@ -40,5 +40,5 @@ export function db(){
   };
 }
 
-export function fail(e: unknown){ console.error(e); return Response.json({ error: e instanceof Error ? e.message : 'Please try again.' }, { status: 400 }); }
+export function fail(e: unknown){ console.error(e); const status = (e as any)?.status && Number.isInteger((e as any).status) ? (e as any).status : 400; return Response.json({ error: e instanceof Error ? e.message : 'Please try again.' }, { status }); }
 export function sameOrigin(req: Request){ const o = req.headers.get('origin'); if(o && o !== new URL(req.url).origin) throw Error('Invalid origin'); }
