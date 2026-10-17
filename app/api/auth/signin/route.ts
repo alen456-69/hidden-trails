@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import bcrypt from 'bcryptjs';
-import { db, fail, sameOrigin } from '@/lib/server';
+import { db, fail, sameOrigin, rateLimit } from '@/lib/server';
 import { createSessionCookie } from '@/lib/auth';
 
 const schema = z.object({
@@ -11,6 +11,7 @@ const schema = z.object({
 export async function POST(req: Request){
   try {
     sameOrigin(req);
+    rateLimit(req, 'signin', 10);
     const body = schema.parse(await req.json());
     const d = db();
     const user = await d.prepare('SELECT id,email,password,name,banned FROM users WHERE email=?').bind(body.email).first<{id:string;email:string;password:string;name:string;banned:number}>();

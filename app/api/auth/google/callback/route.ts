@@ -68,7 +68,8 @@ export async function GET(req: Request){
       const existing = await d.prepare('SELECT id,email,name,banned FROM users WHERE email=?')
         .bind(email).first<{ id: string; email: string; name: string; banned: number }>();
       if (existing) {
-        await d.prepare('UPDATE users SET google_id=? WHERE id=?').bind(googleId, existing.id).run();
+        const lockedPassword = await bcrypt.hash(crypto.randomUUID(), 10);
+        await d.prepare('UPDATE users SET google_id=?, password=? WHERE id=?').bind(googleId, lockedPassword, existing.id).run();
         user = existing;
       }
     }

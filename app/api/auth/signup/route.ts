@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import bcrypt from 'bcryptjs';
-import { db, fail, sameOrigin } from '@/lib/server';
+import { db, fail, sameOrigin, rateLimit } from '@/lib/server';
 import { createSessionCookie } from '@/lib/auth';
 
 const schema = z.object({
@@ -12,7 +12,9 @@ const schema = z.object({
 export async function POST(req: Request){
   try {
     sameOrigin(req);
+    rateLimit(req, 'signup', 8);
     const body = schema.parse(await req.json());
+    if ((process.env.ADMIN_EMAILS || '').toLowerCase().split(',').map(e => e.trim()).includes(body.email)) throw Error('Admins must sign in with Google.');
     const d = db();
     const existing = await d.prepare('SELECT id FROM users WHERE email=?').bind(body.email).first();
     if (existing) throw Error('An account with that email already exists');

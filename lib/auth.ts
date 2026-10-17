@@ -1,5 +1,6 @@
 import { cookies } from 'next/headers';
 import { SignJWT, jwtVerify } from 'jose';
+import { db } from '@/lib/server';
 
 export type SessionUser = {
   userId: string;
@@ -10,7 +11,7 @@ export type SessionUser = {
 };
 
 const COOKIE = 'ht_session';
-const MAX_AGE = 60 * 60 * 24 * 30; // 30 days
+const MAX_AGE = 60 * 60 * 24 * 7; // 7 days
 
 function isAdminEmail(email: string){
   const list = (process.env.ADMIN_EMAILS || '')
@@ -22,7 +23,7 @@ function isAdminEmail(email: string){
 
 function secret(){
   const s = process.env.AUTH_SECRET;
-  if(!s) throw Error('Server is not configured (missing AUTH_SECRET)');
+  if(!s || s.length < 32) throw Error('Server is not configured (AUTH_SECRET must be at least 32 characters)');
   return new TextEncoder().encode(s);
 }
 
@@ -58,6 +59,8 @@ export async function getSessionUser(): Promise<SessionUser | null> {
     const email = payload.email as string;
     const name = (payload.name as string) || email;
     if(!userId || !email) return null;
+    const row = await db().prepare('SELECT banned FROM users WHERE id=?').bind(userId).first<{ banned: number }>();
+    if(!row || row.banned) return null;
     return { userId, displayName: name, email, fullName: name, isAdmin: isAdminEmail(email) };
   } catch {
     return null;
